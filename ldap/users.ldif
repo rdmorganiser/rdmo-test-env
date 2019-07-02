@@ -1,0 +1,42 @@
+dn: uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org
+changetype: add
+objectclass: account
+objectclass: simplesecurityobject
+uid: rdmo
+userPassword: rdmo
+
+dn: uid=user,dc=ldap,dc=test,dc=rdmo,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: user
+uid: user
+sn: User
+givenName: Ulf
+mail: user@example.com
+userPassword: user
+
+dn: uid=evil,dc=ldap,dc=test,dc=rdmo,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: evil
+uid: evil
+sn: Evil
+givenName: Eddi
+mail: evil@example.com
+userPassword: evil
+
+dn: uid=ümlaut,dc=ldap,dc=test,dc=rdmo,dc=org
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: ümlaut
+uid: ümlaut
+sn: Ümlaut
+givenName: Ullå (🤔)
+mail: umlaut@example.com
+userPassword: ümlaut

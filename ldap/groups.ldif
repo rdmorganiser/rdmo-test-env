@@ -1,0 +1,5 @@
+dn: cn=special,dc=ldap,dc=test,dc=rdmo,dc=org
+objectclass: groupOfNames
+cn: special
+member: uid=user,dc=ldap,dc=test,dc=rdmo,dc=org
+member: uid=ümlaut,dc=ldap,dc=test,dc=rdmo,dc=org
