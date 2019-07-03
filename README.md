@@ -135,7 +135,7 @@ ldapsearch -v -x -ZZ -H ldap://ldap.test.rdmo.org \
 
 This is the VM to be user with the LDAP directly.
 
-Clone `xenial` VM.
+Clone `bionic` VM.
 
 ```bash
 hostnamectl set-hostname app.test.rdmo.org
@@ -206,7 +206,7 @@ systemctl restart apache2
 
 This is the VM acting as identity provider for Shibboleth.
 
-Clone `xenial` VM.
+Clone `bionic` VM.
 
 Copy:
 
@@ -356,7 +356,7 @@ Go to:
 
 This is the VM with the service provider and the rdmo instance using Shibboleth.
 
-Clone `xenial` VM.
+Clone `bionic` VM.
 
 ```bash
 hostnamectl set-hostname sp.test.rdmo.org
