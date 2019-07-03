@@ -21,7 +21,7 @@ Answer all questions correctly. This is the first test...
 Import `ssl/ca/test.rdmo.org.crt` into your browser.
 
 
-## xenial
+## bionic
 
 This is the master VM from which all other VM are cloned.
 
@@ -37,7 +37,7 @@ After Install set `preserve_hostname: true` in `/etc/cloud/cloud.cfg`
 
 This is the VM for the LDAP holding the user accounts.
 
-Clone `xenial` VM.
+Clone `bionic` VM.
 
 ```bash
 hostnamectl set-hostname ldap.test.rdmo.org
