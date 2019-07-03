@@ -2,7 +2,7 @@
 
 This repository contains documentation and config files to set up a test enviroment for RDMO. In particular services for LDAP and Shibboleth authentication.
 
-*Important:* These instructions are not meant for a production system. We will use a weak passwords and a non save workflow for certificate signing.
+**Important:** These instructions are not meant for a production system. We will use a weak passwords and a non save workflow for certificate signing.
 
 Currently, the setup consists of virtual machines, with no automatic setup, but this might change (i.e. using ansible, docker, vagrant).
 
@@ -122,13 +122,6 @@ ldapsearch -v -x -D "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org" -w rdmo -b "dc=lda
 ldapsearch -v -x -D "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org" -w rdmo -b "dc=ldap,dc=test,dc=rdmo,dc=org" -s sub 'objectClass=groupOfNames'
 ```
 
-Check if ldap works:
-
-```
-apt install ldap-utils
-ldapsearch -v -x -ZZ -H ldap://ldap.test.rdmo.org \
-    -D "uid=idp,dc=ldap,dc=test,dc=rdmo,dc=org" -w idp \
-    -b "dc=ldap,dc=test,dc=rdmo,dc=org" -s sub 'uid=user'
 ```
 
 ## rdmo-app
@@ -153,14 +146,22 @@ Copy:
 update-ca-certificates
 ```
 
+Check if ldap works (with the `rdmo` user):
+
+```
+apt install ldap-utils
+ldapsearch -v -x -ZZ -H ldap://ldap.test.rdmo.org \
+    -D "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org" -w rdmo \
+    -b "dc=ldap,dc=test,dc=rdmo,dc=org" -s sub 'uid=user'
+```
+
 ### Install app
 
 ```bash
 # as root
 apt install build-essential libxml2-dev libxslt-dev zlib1g-dev \
     python3-dev python3-pip python3-venv \
-    git pandoc texlive texlive-xetex \
-    apache2 libapache2-mod-wsgi-py3
+    git pandoc texlive texlive-xetex
 
 adduser rdmo --home /srv/rdmo
 
@@ -201,6 +202,8 @@ a2enmod ssl rewrite
 systemctl restart apache2
 ```
 
+RDMO with LDAP should work now.
+
 
 ## rdmo-idp
 
@@ -228,7 +231,7 @@ chmod 750 /etc/ssl/private/
 chmod 640 /etc/ssl/private/idp.test.rdmo.org.key
 ```
 
-Check if ldap works:
+Check if ldap works (with the `idp` user):
 
 ```
 apt install ldap-utils
