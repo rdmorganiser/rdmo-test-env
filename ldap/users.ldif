@@ -5,6 +5,13 @@ objectclass: simplesecurityobject
 uid: rdmo
 userPassword: rdmo
 
+dn: uid=idp,dc=ldap,dc=test,dc=rdmo,dc=org
+changetype: add
+objectclass: account
+objectclass: simplesecurityobject
+uid: idp
+userPassword: idp
+
 dn: uid=user,dc=ldap,dc=test,dc=rdmo,dc=org
 objectClass: top
 objectClass: person
