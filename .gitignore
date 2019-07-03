@@ -1,3 +1,4 @@
-ssl/
-!ssl/*.cnf
-!ssl/Makefile
+ssl/ca
+ssl/*.key
+ssl/*.csr
+ssl/*.crt
