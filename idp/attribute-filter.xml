@@ -7,9 +7,29 @@
     <AttributeFilterPolicy id="sp">
         <PolicyRequirementRule xsi:type="Requester" value="https://sp.test.rdmo.org/shibboleth" />
 
-        <AttributeRule attributeID="uid">
+        <AttributeRule attributeID="mail">
             <PermitValueRule xsi:type="ANY" />
         </AttributeRule>
+
+        <AttributeRule attributeID="givenName">
+          <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+
+        <AttributeRule attributeID="surname">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+
+        <AttributeRule attributeID="eduPersonPrincipalName">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+
+        <AttributeRule attributeID="eduPersonScopedAffiliation">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
+    </AttributeFilterPolicy>
+
+    <AttributeFilterPolicy id="sp2">
+        <PolicyRequirementRule xsi:type="Requester" value="https://sp2.test.rdmo.org/shibboleth" />
 
         <AttributeRule attributeID="mail">
             <PermitValueRule xsi:type="ANY" />
@@ -27,6 +47,9 @@
             <PermitValueRule xsi:type="ANY" />
         </AttributeRule>
 
+        <AttributeRule attributeID="eduPersonScopedAffiliation">
+            <PermitValueRule xsi:type="ANY" />
+        </AttributeRule>
     </AttributeFilterPolicy>
 
 </AttributeFilterPolicyGroup>

@@ -4,6 +4,10 @@ from rdmo.core.settings import INSTALLED_APPS, AUTHENTICATION_BACKENDS, MIDDLEWA
 
 from . import BASE_DIR
 
+SITE_ID = 2
+
+MULTISITE = True
+
 DEBUG = True
 
 SECRET_KEY = 'this is not a very secret key'
@@ -13,17 +17,26 @@ ALLOWED_HOSTS = ['localhost', 'ip6-localhost', '127.0.0.1', '[::1]', 'sp.test.rd
 LANGUAGE_CODE = 'de-de'
 TIME_ZONE = 'Europe/Berlin'
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': '/srv/rdmo/rdmo.sqlite3',
+    }
+}
+
 SHIBBOLETH = True
 PROFILE_UPDATE = False
 
 INSTALLED_APPS += ['shibboleth']
 
 SHIBBOLETH_ATTRIBUTE_MAP = {
-    'uid': (True, 'username'),
+    'eppn': (True, 'username'),
     'givenName': (True, 'first_name'),
     'sn': (True, 'last_name'),
     'mail': (True, 'email'),
 }
+
+SHIBBOLETH_GROUP_ATTRIBUTES = ['eduPersonScopedAffiliation']
 
 AUTHENTICATION_BACKENDS.append('shibboleth.backends.ShibbolethRemoteUserBackend')
 

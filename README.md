@@ -6,10 +6,21 @@ This repository contains documentation and config files to set up a test envirom
 
 Currently, the setup consists of virtual machines, with no automatic setup, but this might change (i.e. using ansible, docker, vagrant).
 
+## DNS
+
+This setup need 3 virtual machines and uses 5 hostnames. Somehow name resulution has to work, e.g. by manipulationg `/etc/hosts`:
+
+```
+192.168.0.111  ldap.test.rdmo.org ldap
+192.168.0.112  idp.test.rdmo.org idp
+192.168.0.113  app.test.rdmo.org app
+192.168.0.113  sp.test.rdmo.org
+192.168.0.113  sp2.test.rdmo.org
+```
 
 ## Certificate authority
 
-In a first step we setup a private CA to sign valid certificate (for our test setup). See `ssl/Makefile` and `ssl/ca.cnf` for the fun part.
+We setup a private CA to sign valid certificate (for our test setup). See `ssl/Makefile` and `ssl/ca.cnf` for the fun part.
 
 ```
 cd ssl
@@ -87,9 +98,9 @@ systemctl restart slapd
 
 Copy:
 
-* `ssl/ca/test.rdmo.org.crt` to `/usr/local/share/ca-certificates/` on `ldap.test.rdmo.org`
-* `ssl/ldap.test.rdmo.org.crt` to `/etc/ssl/certs/` on `ldap.test.rdmo.org`
-* `ssl/ldap.test.rdmo.org.key` to `/etc/ssl/private/` on `ldap.test.rdmo.org`
+* `ssl/ca/test.rdmo.org.crt` to `ldap.test.rdmo.org:/usr/local/share/ca-certificates/`
+* `ssl/ldap.test.rdmo.org.crt` to `ldap.test.rdmo.org:/etc/ssl/certs/`
+* `ssl/ldap.test.rdmo.org.key` to `ldap.test.rdmo.org:/etc/ssl/private/`
 
 ```
 update-ca-certificates
@@ -124,86 +135,6 @@ ldapsearch -v -x -D "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org" -w rdmo -b "dc=lda
 
 ```
 
-## rdmo-app
-
-This is the VM to be user with the LDAP directly.
-
-Clone `bionic` VM.
-
-```bash
-hostnamectl set-hostname app.test.rdmo.org
-reboot
-```
-
-Copy:
-
-* `ssl/ca/test.rdmo.org.crt` to `/usr/local/share/ca-certificates/` on `app.test.rdmo.org`
-* `ssl/app.test.rdmo.org.crt` to `/etc/ssl/certs/` on `app.test.rdmo.org`
-* `ssl/app.test.rdmo.org.key` to `/etc/ssl/private/` on `app.test.rdmo.org`
-
-```bash
-# as root
-update-ca-certificates
-```
-
-Check if ldap works (with the `rdmo` user):
-
-```
-apt install ldap-utils
-ldapsearch -v -x -ZZ -H ldap://ldap.test.rdmo.org \
-    -D "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org" -w rdmo \
-    -b "dc=ldap,dc=test,dc=rdmo,dc=org" -s sub 'uid=user'
-```
-
-### Install app
-
-```bash
-# as root
-apt install build-essential libxml2-dev libxslt-dev zlib1g-dev \
-    python3-dev python3-pip python3-venv \
-    git pandoc texlive texlive-xetex
-
-adduser rdmo --home /srv/rdmo
-
-# as rdmo
-git clone https://github.com/rdmorganiser/rdmo-app
-cd rdmo-app
-python3 -m venv env
-echo "source ~/rdmo-app/env/bin/activate" >> ~/.bashrc
-. ~/.bashrc
-
-pip install --upgrade pip setuptools
-pip install rdmo
-```
-
-Copy `rdmo/app.local.py` to `/srv/rdmo/rdmo-app/config/settings` on `sp.test.rdmo.org`.
-
-```bash
-# as rdmo
-./manage.py check
-./manage.py migrate
-./manage.py download_vendor_files
-./manage.py collectstatic
-```
-```
-
-### Deploy with Apache
-
-```bash
-# as root
-apt install apache2 libapache2-mod-wsgi-py3
-```
-
-Copy `apache2/app.conf` to `/etc/apache2/sites-available/000-default.conf` on `app.test.rdmo.org`.
-
-```bash
-# as root
-a2enmod ssl rewrite
-systemctl restart apache2
-```
-
-RDMO with LDAP should work now.
-
 
 ## rdmo-idp
 
@@ -213,9 +144,9 @@ Clone `bionic` VM.
 
 Copy:
 
-* `ssl/ca/test.rdmo.org.crt` to `/usr/local/share/ca-certificates/` on `idp.test.rdmo.org`
-* `ssl/idp.test.rdmo.org.crt` to `/etc/ssl/certs/` on `idp.test.rdmo.org`
-* `ssl/idp.test.rdmo.org.key` to `/etc/ssl/private/` on `idp.test.rdmo.org`
+* `ssl/ca/test.rdmo.org.crt` to `idp.test.rdmo.org:/usr/local/share/ca-certificates/`
+* `ssl/idp.test.rdmo.org.crt` to `idp.test.rdmo.org:/etc/ssl/certs/` on `idp.test.rdmo.org`
+* `ssl/idp.test.rdmo.org.key` to `idp.test.rdmo.org:/etc/ssl/private/` on `idp.test.rdmo.org`
 
 ```bash
 # as root
@@ -225,8 +156,8 @@ reboot
 ```
 
 ```bash
-chgrp ssl-cert /etc/ssl/private
-chgrp ssl-cert /etc/ssl/private/idp.test.rdmo.org.key
+chgrp tomcat8 /etc/ssl/private
+chgrp tomcat8 /etc/ssl/private/idp.test.rdmo.org.key
 chmod 750 /etc/ssl/private/
 chmod 640 /etc/ssl/private/idp.test.rdmo.org.key
 ```
@@ -331,6 +262,7 @@ Copy:
 * `idp/attribute-resolver.xml`
 * `idp/attribute-filter.xml`
 * `idp/ldap.properties`
+* `idp/metadata-providers.xml`
 
 to `/opt/shibboleth-idp/conf/` on `idp.test.rdmo.org`.
 
@@ -342,7 +274,7 @@ systemctl restart tomcat8
 
 ### Proxy IdP with apache
 
-Copy `apache2/idp.conf` to `/etc/apache2/sites-available/000-default.conf` on `idp.test.rdmo.org`.
+Copy `apache2/idp.conf` to `idp.test.rdmo.org:/etc/apache2/sites-available/000-default.conf`.
 
 ```
 a2enmod ssl rewrite proxy_ajp
@@ -351,33 +283,48 @@ systemctl restart apache2
 
 Go to:
 
+* https://idp.test.rdmo.org/idp/status
 * https://idp.test.rdmo.org/idp/shibboleth
 * https://idp.test.rdmo.org/idp/profile/admin/resolvertest?requester=https%3A%2F%2Fsp.test.rdmo.org%2Fshibboleth&principal=test
 
 
-## rdmo-sp
+## rdmo-app
 
-This is the VM with the service provider and the rdmo instance using Shibboleth.
+This is the VM for the different rdmo apps.
 
 Clone `bionic` VM.
 
 ```bash
-hostnamectl set-hostname sp.test.rdmo.org
+hostnamectl set-hostname app.test.rdmo.org
 reboot
 ```
 
 Copy:
 
-* `ssl/ca/test.rdmo.org.crt` to `/usr/local/share/ca-certificates/` on `sp.test.rdmo.org`
-* `ssl/sp.test.rdmo.org.crt` to `/etc/ssl/certs/` on `sp.test.rdmo.org`
-* `ssl/sp.test.rdmo.org.key` to `/etc/ssl/private/` on `sp.test.rdmo.org`
+* `ssl/ca/test.rdmo.org.crt` to `app.test.rdmo.org:/usr/local/share/ca-certificates/`
+* `ssl/app.test.rdmo.org.crt` to `app.test.rdmo.org:/etc/ssl/certs/`
+* `ssl/sp.test.rdmo.org.crt` to `app.test.rdmo.org:/etc/ssl/certs/`
+* `ssl/sp2.test.rdmo.org.crt` to `app.test.rdmo.org:/etc/ssl/certs/`
+* `ssl/app.test.rdmo.org.key` to `app.test.rdmo.org:/etc/ssl/private/`
+* `ssl/sp.test.rdmo.org.key` to `app.test.rdmo.org:/etc/ssl/private/`
+* `ssl/sp2.test.rdmo.org.key` to `app.test.rdmo.org:/etc/ssl/private/`
 
 ```bash
 # as root
 update-ca-certificates
 ```
 
-### Install app
+Check if ldap works (with the `rdmo` user):
+
+```
+# as root
+apt install ldap-utils
+ldapsearch -v -x -ZZ -H ldap://ldap.test.rdmo.org \
+    -D "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org" -w rdmo \
+    -b "dc=ldap,dc=test,dc=rdmo,dc=org" -s sub 'uid=user'
+```
+
+### Setup rdmo prerequisites and user
 
 ```bash
 # as root
@@ -389,18 +336,57 @@ apt install build-essential libxml2-dev libxslt-dev zlib1g-dev \
 adduser rdmo --home /srv/rdmo
 
 # as rdmo
-git clone https://github.com/rdmorganiser/rdmo-app
-cd rdmo-app
 python3 -m venv env
-echo "source ~/rdmo-app/env/bin/activate" >> ~/.bashrc
+echo "source ~/env/bin/activate" >> ~/.bashrc
 . ~/.bashrc
-
-pip install --upgrade pip setuptools
-pip install rdmo
-pip install -r requirements/shibboleth.txt
 ```
 
-Copy `rdmo/sp.local.py` to `/srv/rdmo/rdmo-app/config/settings` on `sp.test.rdmo.org`.
+
+### Install app
+
+This is the app we will use with LDAP.
+
+```
+# as rdmo
+git clone https://github.com/rdmorganiser/rdmo-app
+cd rdmo-app
+
+pip install --upgrade pip setuptools
+pip install git+https://github.com/rdmorganiser/rdmo
+pip install -r requirements/shibboleth.txt  # we need that later
+```
+
+Copy `rdmo/app.local.py` to `app.test.rdmo.org:/srv/rdmo/rdmo-app/config/settings`.
+
+```bash
+# as rdmo
+./manage.py check
+./manage.py migrate
+./manage.py download_vendor_files
+./manage.py collectstatic
+```
+```
+
+### Deploy with Apache
+
+Copy `apache2/app.conf` to `app.test.rdmo.org:/etc/apache2/sites-available/app.conf`.
+
+```bash
+# as root
+a2enmod ssl rewrite
+a2ensite app
+systemctl restart apache2
+```
+
+RDMO with LDAP should work now on https://app.test.rdmo.org.
+
+
+### Install first SP
+
+Clone `rdmo-app` to `/srv/rdmo/rdmo-sp` (in the same `env`, so no `pip install` required).
+```
+
+Copy `rdmo/sp.local.py` to `sp.test.rdmo.org:/srv/rdmo/rdmo-sp/config/settings`.
 
 ```bash
 # as rdmo
@@ -427,10 +413,8 @@ apt autoremove
 
 Copy:
 
-* `sp/attribute-map.xml`
-* `sp/shibboleth2.xml`
-
-to `/etc/shibboleth` on `sp.test.rdmo.org`.
+* `sp/attribute-map.xml` to `sp.test.rdmo.org:/etc/shibboleth`
+* `sp/shibboleth2.xml` to `sp.test.rdmo.org:/etc/shibboleth`
 
 Fetch IdP Metadata:
 
@@ -438,32 +422,28 @@ Fetch IdP Metadata:
 wget https://idp.test.rdmo.org/idp/shibboleth -O /etc/shibboleth/idp-metadata.xml
 ```
 
-Restart `shibd`:
+Generate keys and restart `shibd`:
 
 ```bash
+shib-keygen
 systemctl restart shibd
 ```
 
-### Deploy with Apache
+### Deploy first SP with Apache
+
+Copy `apache2/sp.conf` to `/etc/apache2/sites-available/sp.conf`.
 
 ```bash
 # as root
-apt install apache2 libapache2-mod-wsgi-py3
-```
-
-Copy `apache2/sp.conf` to `/etc/apache2/sites-available/000-default.conf` on `ap.test.rdmo.org`.
-
-```bash
-# as root
-a2enmod ssl rewrite
+a2ensite sp
 systemctl restart apache2
 ```
 
 ### Configure metadata on IdP
 
-Log in on `idp.test.rdmo.org`:
+Log in on `idp.test.rdmo.org`.
 
-Copy `idp/metadata-provider.xml` to `/opt/shibboleth-idp/conf/` on `idp.test.rdmo.org`.
+Uncomment the first `MetadataProvider` in `/opt/shibboleth-idp/conf/metadata-provider.xml`.
 
 Fetch metadata and restart tomcat:
 
@@ -472,4 +452,54 @@ wget https://sp.test.rdmo.org/Shibboleth.sso/Metadata -O /opt/shibboleth-idp/met
 systemctl restart tomcat8
 ```
 
-Now it should work, but probably won't.
+Now it should work on https://sp.test.rdmo.org (but probably won't).
+
+
+### Install second SP
+
+Log in back on `sp.test.rdmo.org`.
+
+Clone `rdmo-app` to `/srv/rdmo/rdmo-sp2` (again, in the same `env`, so no `pip install` required).
+```
+
+Copy `rdmo/sp2.local.py` to `sp.test.rdmo.org:/srv/rdmo/rdmo-sp/config/settings/local.py`.
+
+```bash
+# as rdmo
+./manage.py check
+./manage.py migrate
+./manage.py download_vendor_files
+./manage.py collectstatic
+```
+
+### Deploy second SP with Apache
+
+Copy `apache2/sp2.conf` to `sp.test.rdmo.org:/etc/apache2/sites-available/sp2.conf`.
+
+```bash
+# as root
+a2ensite sp2
+systemctl restart apache2
+```
+
+Generate keys and restart `shibd`:
+
+```bash
+shib-keygen -h sp2.test.rdmo.org -n sp2
+systemctl restart shibd
+```
+
+### Configure metadata on IdP
+
+Log in on `idp.test.rdmo.org`.
+
+Uncomment the second `MetadataProvider` in `/opt/shibboleth-idp/conf/metadata-provider.xml`.
+
+Fetch metadata and restart tomcat:
+
+```bash
+wget https://sp2.test.rdmo.org/Shibboleth.sso/Metadata -O /opt/shibboleth-idp/metadata/sp2-metadata.xml
+systemctl restart tomcat8
+```
+
+Now things should work on https://sp2.test.rdmo.org as well.

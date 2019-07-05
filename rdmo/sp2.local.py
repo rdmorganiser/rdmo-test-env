@@ -1,17 +1,18 @@
 import os
-import ldap
 
-from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+from rdmo.core.settings import INSTALLED_APPS, AUTHENTICATION_BACKENDS, MIDDLEWARE
 
 from . import BASE_DIR
 
-DEBUG = True
+SITE_ID = 3
 
 MULTISITE = True
 
+DEBUG = True
+
 SECRET_KEY = 'this is not a very secret key'
 
-ALLOWED_HOSTS = ['localhost', 'ip6-localhost', '127.0.0.1', '[::1]', 'app.test.rdmo.org']
+ALLOWED_HOSTS = ['localhost', 'ip6-localhost', '127.0.0.1', '[::1]', 'sp2.test.rdmo.org']
 
 LANGUAGE_CODE = 'de-de'
 TIME_ZONE = 'Europe/Berlin'
@@ -23,30 +24,30 @@ DATABASES = {
     }
 }
 
+SHIBBOLETH = True
 PROFILE_UPDATE = False
 
-AUTH_LDAP_SERVER_URI = "ldap://ldap.test.rdmo.org"
-AUTH_LDAP_BIND_DN = "uid=rdmo,dc=ldap,dc=test,dc=rdmo,dc=org"
-AUTH_LDAP_BIND_PASSWORD = "rdmo"
-AUTH_LDAP_BIND_AS_AUTHENTICATING_USER = True
-AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    "dc=ldap,dc=test,dc=rdmo,dc=org", ldap.SCOPE_SUBTREE, "(uid=%(user)s)"
-)
-AUTH_LDAP_USER_ATTR_MAP = {
-    "first_name": "givenName",
-    "last_name": "sn",
-    'email': 'mail'
-}
-AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
-    "dc=ldap,dc=test,dc=rdmo,dc=org", ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
-)
-AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr="cn")
-AUTH_LDAP_MIRROR_GROUPS = ['special']
+INSTALLED_APPS += ['shibboleth']
 
-AUTHENTICATION_BACKENDS = (
-    "django_auth_ldap.backend.LDAPBackend",
-    "django.contrib.auth.backends.ModelBackend",
+SHIBBOLETH_ATTRIBUTE_MAP = {
+    'eppn': (True, 'username'),
+    'givenName': (True, 'first_name'),
+    'sn': (True, 'last_name'),
+    'mail': (True, 'email'),
+}
+
+# no groups here
+# SHIBBOLETH_GROUP_ATTRIBUTES = ['eduPersonScopedAffiliation']
+
+AUTHENTICATION_BACKENDS.append('shibboleth.backends.ShibbolethRemoteUserBackend')
+
+MIDDLEWARE.insert(
+    MIDDLEWARE.index('django.contrib.auth.middleware.AuthenticationMiddleware') + 1,
+    'shibboleth.middleware.ShibbolethRemoteUserMiddleware'
 )
+
+LOGIN_URL = '/Shibboleth.sso/Login?target=/projects'
+LOGOUT_URL = '/Shibboleth.sso/Logout'
 
 LOGGING_DIR = os.path.join(BASE_DIR, 'log')
 LOGGING = {
@@ -89,12 +90,6 @@ LOGGING = {
             'filename': os.path.join(LOGGING_DIR, 'rdmo.log'),
             'formatter': 'name'
         },
-        'ldap_log': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOGGING_DIR, 'ldap.log'),
-            'formatter': 'name'
-        },
         'console': {
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
@@ -111,10 +106,6 @@ LOGGING = {
             'handlers': ['mail_admins', 'error_log'],
             'level': 'ERROR',
             'propagate': True
-        },
-        'django_auth_ldap': {
-            "level": "DEBUG",
-            "handlers": ["ldap_log"]
         },
         'rdmo': {
             'handlers': ['rdmo_log'],

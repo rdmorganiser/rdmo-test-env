@@ -1,4 +1,4 @@
-all: ca ldap app idp sp
+all: ca ldap app idp idp2 sp sp2
 
 ldap: ldap.test.rdmo.org.key ldap.test.rdmo.org.crt
 
@@ -6,7 +6,11 @@ app: app.test.rdmo.org.key app.test.rdmo.org.crt
 
 idp: idp.test.rdmo.org.key idp.test.rdmo.org.crt
 
+idp2: idp2.test.rdmo.org.key idp2.test.rdmo.org.crt
+
 sp: sp.test.rdmo.org.key sp.test.rdmo.org.crt
+
+sp2: sp2.test.rdmo.org.key sp2.test.rdmo.org.crt
 
 ca:
 	mkdir ca && \
